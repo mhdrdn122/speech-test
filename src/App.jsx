@@ -4,16 +4,17 @@ import { Button, Container, Row, Col, Alert, Spinner } from 'react-bootstrap';
 const App = () => {
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loadingSpeech, setLoadingSpeech] = useState(false);
+  const [recording, setRecording] = useState(false);
   const recognitionRef = useRef(null);
 
   const handleSpeak = () => {
-    setLoading(true);
+    setLoadingSpeech(true);
     const utterance = new SpeechSynthesisUtterance(
-      'هذا اختبار للصوت على المتصفح اذا كنت تسمع ذلك فهذا يعني ان المتصفح لديك يدعم تحويل النص الى صوت'
+      'هذا اختبار للصوت على المتصفح، إذا كنت تسمع ذلك فهذا يعني أن المتصفح لديك يدعم تحويل النص إلى صوت.'
     );
     utterance.lang = 'ar-SA';
-    utterance.onend = () => setLoading(false);
+    utterance.onend = () => setLoadingSpeech(false);
     speechSynthesis.speak(utterance);
   };
 
@@ -27,7 +28,7 @@ const App = () => {
 
     setError('');
     setTranscript('');
-    setLoading(true);
+    setRecording(true);
 
     const recognition = new SpeechRecognition();
     recognition.lang = 'ar-SA';
@@ -41,10 +42,10 @@ const App = () => {
 
     recognition.onerror = (event) => {
       setError('حدث خطأ أثناء التحويل: ' + event.error);
-      setLoading(false);
+      setRecording(false);
     };
 
-    recognition.onend = () => setLoading(false);
+    recognition.onend = () => setRecording(false);
 
     recognitionRef.current = recognition;
     recognition.start();
@@ -54,6 +55,7 @@ const App = () => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
+    setRecording(false);
   };
 
   return (
@@ -62,24 +64,33 @@ const App = () => {
         <Col md={8} className="text-center">
           <h2 className="mb-4">اختبار دعم المتصفح لتحويل النص إلى صوت والعكس</h2>
 
-          <Button variant="primary" className="m-2" onClick={handleSpeak} disabled={loading}>
-            {loading ? <Spinner animation="border" size="sm" /> : 'تشغيل تحويل النص إلى صوت'}
+          <Button
+            variant="primary"
+            className="m-2 d-flex align-items-center justify-content-center gap-2"
+            onClick={handleSpeak}
+          >
+            {loadingSpeech && <Spinner animation="border" size="sm" />}
+            <span>تشغيل تحويل النص إلى صوت</span>
           </Button>
 
           <Button
-            variant="success"
-            className="m-2"
+            variant={recording ? 'danger' : 'success'}
+            className="m-2 d-flex align-items-center justify-content-center gap-2"
             onMouseDown={handleSpeechStart}
             onMouseUp={handleSpeechEnd}
             onTouchStart={handleSpeechStart}
             onTouchEnd={handleSpeechEnd}
-            disabled={loading}
           >
-            {loading ? <Spinner animation="border" size="sm" /> : 'اضغط مطولاً للتسجيل'}
+            {recording && <Spinner animation="grow" size="sm" />}
+            <span>{recording ? 'جارٍ التسجيل...' : 'اضغط مطولاً للتسجيل'}</span>
           </Button>
 
-          {error && <Alert variant="danger" className="mt-3">{error}</Alert>}
-          {transcript && <Alert variant="info" className="mt-3">النص المحول: {transcript}</Alert>}
+          {error && <Alert variant="danger" className="mt-4">{error}</Alert>}
+          {transcript && (
+            <Alert variant="info" className="mt-4 text-end" dir="rtl">
+              <strong>النص المحول:</strong> {transcript}
+            </Alert>
+          )}
         </Col>
       </Row>
     </Container>
